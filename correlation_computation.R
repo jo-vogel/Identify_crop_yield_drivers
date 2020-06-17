@@ -10,31 +10,29 @@ monthlymeteovar_xtrm <- readRDS(paste0(path_data,"/extremeindices_and_monthlymet
 
 
 # remove gridpoints that weren't used ####
-old<-cbind(monthlymeteovar_xtrm$longitude,monthlymeteovar_xtrm$latitude)
-new<-cbind(final_pixels_coord$longitude,final_pixels_coord$latitude)
 pixelstokeep <- final_pixels_coord$ref_in_995
 
 unused <- setdiff(1:995,pixelstokeep)
 
 #put data in arrays
 monthlymeteovar_array <- array(NA,c(7,995,17,1600)) # extract the meteorological variables
-for (i in 1:7){
-  monthlymeteovar_array[i,,,] <- monthlymeteovar_xtrm[[i+3]]
+for (varia in 1:7){
+  monthlymeteovar_array[varia,,,] <- monthlymeteovar_xtrm[[varia+3]]
 }
 
 yield_xtrm_array <- array(NA,c(8,995,1600)) #extract the extreme indicators
-for (i in 1:7){
-  yield_xtrm_array[i+1,,] <- monthlymeteovar_xtrm[[i+10]]
+for (varia in 1:7){
+  yield_xtrm_array[varia+1,,] <- monthlymeteovar_xtrm[[varia+10]]
 }
 yield_xtrm_array[1,,] <- monthlymeteovar_xtrm[[3]]
 
 #remove unused pixels
-for (j in 1:length(unused)){
-  monthlymeteovar_array[,unused[j],,]<-NA
+for (pix in 1:length(unused)){
+  monthlymeteovar_array[,unused[pix],,]<-NA
 }
 
-for (j in 1:length(unused)){
-  yield_xtrm_array[,unused[j],]<-NA
+for (pix in 1:length(unused)){
+  yield_xtrm_array[,unused[pix],]<-NA
 }
 
 
@@ -43,19 +41,19 @@ for (j in 1:length(unused)){
 message('gives warnings due to NAs')
 
 global_correlations_meteovars <- array(NA,c(7,995,17))
-for (h in 1:7){ #loop on meteo variabels
-  for (i in 1:995){ #loop on pixels
-    for (j in 1:17){ #loop on months
-      global_correlations_meteovars[h,i,j] <- cor(monthlymeteovar_array[h,i,j,], yield_xtrm_array[1,i,])
-    } # end for j
-  } #end for i
-} #end for h
+for (varia in 1:7){ #loop on meteo variabels
+  for (pix in 1:995){ #loop on pixels
+    for (month in 1:17){ #loop on months
+      global_correlations_meteovars[varia,pix,month] <- cor(monthlymeteovar_array[varia,pix,month,], yield_xtrm_array[1,pix,])
+    } # end for month
+  } #end for pix
+} #end for varia
 global_correlations_xtrm <- array(NA,c(7,995))
-for (h in 2:8){ #loop on extreme indicators
-  for (i in 1:995){ #loop on pixels
-    global_correlations_xtrm[h-1,i] <- cor(yield_xtrm_array[h,i,], yield_xtrm_array[1,i,])
-  } #end for i
-} #end for h
+for (varia in 2:8){ #loop on extreme indicators
+  for (pix in 1:995){ #loop on pixels
+    global_correlations_xtrm[varia-1,pix] <- cor(yield_xtrm_array[varia,pix,], yield_xtrm_array[1,pix,])
+  } #end for pix
+} #end for varia
 
 
 # global mean of correlation per season ####
@@ -65,32 +63,32 @@ winter <- apply(monthlymeteovar_array[,,c(5:7,17),],c(1,2,4),mean, na.rm=TRUE)
 spring <- apply(monthlymeteovar_array[,,c(8:10),],c(1,2,4),mean, na.rm=TRUE)
 summer <- apply(monthlymeteovar_array[,,c(1,11:13),],c(1,2,4),mean, na.rm=TRUE)
 autumn <- apply(monthlymeteovar_array[,,c(2:4,14:16),],c(1,2,4),mean, na.rm=TRUE)
-for (h in 1:7){ #loop on variables
-  for (i in 1:995){ #loop on pixels
-    for (j in 1:4){ #loop on seasons
-      if (j==1){ #winter
-        global_seasonal_correlations_meteovars[h,i,j] <- cor(winter[h,i,], yield_xtrm_array[1,i,])
-      }else if (j==2){ #spring
-        global_seasonal_correlations_meteovars[h,i,j] <- cor(spring[h,i,], yield_xtrm_array[1,i,])
-      }else if (j==3){ #summer
-        global_seasonal_correlations_meteovars[h,i,j] <- cor(summer[h,i,], yield_xtrm_array[1,i,])
-      }else if (j==4){ #autumn
-        global_seasonal_correlations_meteovars[h,i,j] <- cor(autumn[h,i,], yield_xtrm_array[1,i,])
+for (varia in 1:7){ #loop on variables
+  for (pix in 1:995){ #loop on pixels
+    for (season in 1:4){ #loop on seasons
+      if (season==1){ #winter
+        global_seasonal_correlations_meteovars[varia,pix,season] <- cor(winter[varia,pix,], yield_xtrm_array[1,pix,])
+      }else if (season==2){ #spring
+        global_seasonal_correlations_meteovars[varia,pix,season] <- cor(spring[varia,pix,], yield_xtrm_array[1,pix,])
+      }else if (season==3){ #summer
+        global_seasonal_correlations_meteovars[varia,pix,season] <- cor(summer[varia,pix,], yield_xtrm_array[1,pix,])
+      }else if (season==4){ #autumn
+        global_seasonal_correlations_meteovars[varia,pix,season] <- cor(autumn[varia,pix,], yield_xtrm_array[1,pix,])
       }
-    } # end for j
-  } # end for i
-} #end for h
+    } # end for season
+  } # end for pix
+} #end for varia
 
 
 # mean per growing season (GS) ####
 
 global_GS_correlations_meteovars <- array(NA,c(7,995))
 GS <- apply(monthlymeteovar_array[,,,],c(1,2,4),mean, na.rm=TRUE)
-for (h in 1:7){ # loop on meteo variables
-  for (i in 1:995){ # loop on pixels
-    global_GS_correlations_meteovars[h,i] <- cor(GS[h,i,], yield_xtrm_array[1,i,])
-  } #end for i
-} #end for h
+for (varia in 1:7){ # loop on meteo variables
+  for (pix in 1:995){ # loop on pixels
+    global_GS_correlations_meteovars[varia,pix] <- cor(GS[varia,pix,], yield_xtrm_array[1,pix,])
+  } #end for ipix
+} #end for varia
 
 
 # make global means ####
