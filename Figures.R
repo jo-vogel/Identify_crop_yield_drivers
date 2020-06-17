@@ -1,5 +1,5 @@
 # Creation of the Figures 1, 5, 6, 7, 8, A3, A4 and the supplementary gifs of the article
-# Authors: Pauline Rivoire, Johannes Vogel, Cristina Deidda
+# Authors: Pauline Rivoire, Johannes Vogel, Cristina Deidda, Elisabeth Tschumi
 
 # This code was run under version 3.6 of R
 
@@ -7,13 +7,14 @@
 #' a) Load data
 #' b) Process data
 #' c) Create Fig. 1
-#' d) Create Fig. 5
-#' e) Create Fig. 6
-#' f) Create Fig. 7
-#' g) Create Fig. 8
-#' h) Create Fig. A3
-#' i) Create Fig. A4
-#' j) Create GIFs
+#' d) Create Fig. 3
+#' e) Create Fig. 5
+#' f) Create Fig. 6
+#' g) Create Fig. 7
+#' h) Create Fig. 8
+#' i) Create Fig. A3
+#' j) Create Fig. A4
+#' k) Create GIFs
 
 
 ##### Load data ####
@@ -116,6 +117,52 @@ ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
   geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
              color = "black", size = 0.89, pch=4)
 ggsave(filename = "Raw_mean_yield.png", width = 20, height = 4)
+
+
+# Figure 3: Linear correlation plot ####
+########################################
+# Compute correlation /!\ might take  ~10min
+source(paste0(path_code,"/correlation_computation.R"))
+
+# Set p lot layout
+pdf(file="correlation_plot.pdf", width = 12, height = 4)
+layout(matrix(c(1, 2, 3, 4,
+                1, 2, 3, 4,
+                1, 2, 3, 4,
+                5, 5, 5, 5), ncol=4, byrow=TRUE),
+       heights = c(1,1,1,0.5),    
+       widths = c(8, 2.3, 9.5, 2.3))     
+
+#define margins and colorpalette
+par(oma=c(0,0,2,0),mai=c(0.2,0,0.2,0),cex=1, xpd=NA)
+col2 <- colorRampPalette(c("#053061", "#2166AC", "#4393C3", "#92C5DE",
+                           "#D1E5F0", "#FFFFFF", "#FDDBC7", "#F4A582",
+                           "#D6604D", "#B2182B", "#67001F"))
+#france meteovars
+corrplot(france_meteovar_correlations[,c(4:14,18:22)], method = "circle", tl.col="black", xpd=NA, cl.pos = "n", cl.ratio=0.3, col = col2(50))
+segments(11.5,0.5,x1=11.5,y1=12.5)
+segments(15.5,0.5,x1=15.5,y1=12.5)
+mtext("(a)",line=1,at=-0.9, cex=1.1)
+#France extremal indicators
+colnames(france_xtrm_correlations)<-c("GS                 ")
+corrplot(france_xtrm_correlations, method = "circle", tl.col="black", col = col2(50), cl.pos = "n", cl.ratio=1)
+mtext("(b)",line=1,at=-1.4, cex=1.1)
+segments(2,0,2,11,lwd=3)
+#global meteovars
+corrplot(global_meteovar_correlations[,c(2:16,18:22)], method = "circle", tl.col="black", col = col2(50), cl.ratio=1, cl.pos="n")
+mtext("(c)",line=1,at=-0.9, cex=1.1)
+segments(15.5,0.5,x1=15.5,y1=12.5)
+segments(19.5,0.5,x1=19.5,y1=12.5)
+#global extremal indicators
+colnames(global_xtrm_correlations)<-c("GS                 ")
+corrplot(global_xtrm_correlations, method = "circle", tl.col="black", col = col2(50), cl.pos = "n", cl.ratio=1)
+mtext("(d)",line=1,at=-1.4, cex=1.1)
+
+
+par(mai=c(0,0.7,0,0.1))
+drawPalette(zlim=c(-1,1), col = col2(50), pos=1, las=1)
+dev.off()
+
 
 
 # Figure 5: Critical success index (CSI) ####
