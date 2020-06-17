@@ -7,7 +7,7 @@
 # a) Functions for the cut off level
 # b) Function to get the name of coefficients sorted by decresing absolute value
 # c) Additional functions, useful to plot Fig 7.
-
+# The functions AccuracyCutoffInfo, ConfusionMatrixInfo and ROCInfo are based on this article http://ethen8181.github.io/machine-learning/unbalanced/unbalanced.html and can be found in their original form here: https://github.com/ethen8181/machine-learning/tree/master/unbalanced
 
 
 
