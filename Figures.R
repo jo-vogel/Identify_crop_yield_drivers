@@ -240,8 +240,10 @@ p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
 
 ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("(a)", "(b)" ), font.label = list(size = 21, face="plain"))
 
+ggsave(filename = "Scatterplot_CSIvsYield_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 15, height = 7)                      
 
 
+                        
 # Figure 7: Maps illustrating the selected predictors by the Lasso logistical regression ####
 #############################################################################################
 
