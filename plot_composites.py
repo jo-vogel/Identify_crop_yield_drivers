@@ -15,7 +15,7 @@ Figures 2, A1, A2 in the paper.
 
 author: Christoph A Sauter
 email: christoph.sauter@strath.ac.uk
-date: 15. June 2020
+date: 22. June 2020
 Python version: 3.7
 """
 
@@ -119,8 +119,8 @@ def plot_mean_with_percentiles(x, alpha, plot_color, percentile_value):
 # -------------------------
 
 # EDIT TO DIRECTORY WHERE THE FILES ARE:
-data_dir = "D:/user/vogelj/Group_project/Final/Data"
-           
+data_dir = '/Users/christoph/Desktop/DAMOCLES_training_school/' \
+           'WorkingGroup1/nc_data/'
 
 met_var_list = ['dps', 'pr', 'rsds', 'sfcwind', 'tasmax', 'tasmin', 'vpd']
 
@@ -130,7 +130,7 @@ crop = read_nc_data(data_dir, file_name='crop_yield_NH.nc',
 gp = ['FR', 'CH2', 'US3']
 # France 47.7 ​०N, 1.1 ​०E
 # China 33.1 ​०N, 114.8 ०​E
-# USA  42.0 ०​N, 91.1 ०​ W
+# USA  44.3 ०​N, 90.0 ०​ W
 data_gp = {}
 for i, loc in enumerate(gp):
     fname = 'meteo_daily_' + gp[i] + '_ensemblemode.nc'
@@ -240,4 +240,6 @@ for country in gp:
             var_counter = var_counter + 1
     fig.canvas.draw()  # Work-around for when tight_layout() produces an error
     plt.tight_layout()
+    # fig.savefig(data_dir[:-8] + 'Plots/' + country +
+    #             '_yearly_composite_v1.pdf')
     plt.show()
