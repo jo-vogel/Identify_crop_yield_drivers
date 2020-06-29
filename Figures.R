@@ -28,13 +28,21 @@ path_code <- message("insert code directory here") # Insert path of the code her
 seed=1994 # random seed
 train_size <- 70 # Percentage of data assigned to the training data set
 
-# Load the preprocessed standardized climate variables and crop yield for all 995 grid points in the northern hemisphere
-load(paste0(path_data,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata")) 
+message("Precise here if you were provided the global crop yield data")
+crop_yield_provided <- FALSE
+
+
+if (crop_yield_provided) {
+  # Load the preprocessed standardized climate variables and crop yield for all 995 grid points in the northern hemisphere
+  load(paste0(path_data,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata")) 
+  # Mean yield and yield standard deviation for all 995 grid points
+  load(paste0(path_data,"/RawMeanYield_995pix.Rdata"))
+  load(paste0(path_data,"/RawSdYield_995pix.Rdata"))
+} #end if crop yield provided
+
+
 # Final selection of grid points
 load(paste0(path_data,"/final_889pix_coords.Rdata"))
-# Mean yield and yield standard deviation for all 995 grid points
-load(paste0(path_data,"/RawMeanYield_995pix.Rdata"))
-load(paste0(path_data,"/RawSdYield_995pix.Rdata"))
 # Load matrix with all coordinates required for Fig. 8
 coord_all <- read.csv2(paste0(path_data,"/coord_all.csv"), row.names=1)
 # Shapefile of borders of the continents
@@ -42,87 +50,109 @@ continents <- readOGR(paste0(path_data,"/continent.shp")) # from https://www.arc
 
 # The statistical model is calculated using  Lasso_regression.R
 load(paste0(path_data,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
+Model_chosen <- lasso_model_lambda1se # Lasso regression using lambda 1 standard error
 
 # Load additional reqruied functions
 source(paste0(path_code,"/additional_functions.R"))
-# Preprocess the data
-source(paste0(path_code,"/Data_processing.R"))
+
+
+if (crop_yield_provided) {
+  # Preprocess the data
+  source(paste0(path_code,"/Data_processing.R"))
+} #end if crop yield provided
+
 
 
 ##### Adjust cutoff level #####
 
-y1_train_list_simple_lasso <- y1_train_list
-x1_train_list_simple_lasso <- x1_train_list
-Model_chosen_889 <- list()
-y1_train_list_simple_lasso <- list()
-x1_train_list_simple_lasso <- list()
-work_pix_tmp <- numeric()
-final_pix_num <- length(final_pixels_coord$latitude) # see section 2.2 of the article
-Model_chosen <- lasso_model_lambda1se # Lasso regression using lambda 1 standard error
-for (pixel in 1:final_pix_num) {
- pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
- y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix_in_995]]
- x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix_in_995]]
- Model_chosen_889[[pixel]] <- Model_chosen[[pix_in_995]]
- if(is.character(Model_chosen[[pix_in_995]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
-}#end for pixel
-cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
-cost_fn_simple_lasso <- 100 # False alarms
-work_pix <- which(work_pix_tmp==1)
-
-# return the mean value, over all pixels, of the adjusted cutoff named segregation threshold
-segreg_th <- adjust_cutoff(model_vector = Model_chosen_889,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
-                           work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+if (crop_yield_provided) {
+  y1_train_list_simple_lasso <- y1_train_list
+  x1_train_list_simple_lasso <- x1_train_list
+  Model_chosen_889 <- list()
+  y1_train_list_simple_lasso <- list()
+  x1_train_list_simple_lasso <- list()
+  work_pix_tmp <- numeric()
+  final_pix_num <- length(final_pixels_coord$latitude) # see section 2.2 of the article
+  
+  for (pixel in 1:final_pix_num) {
+    pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
+    y1_train_list_simple_lasso[[pixel]] <- y1_train_list[[pix_in_995]]
+    x1_train_list_simple_lasso[[pixel]] <- x1_train_list[[pix_in_995]]
+    Model_chosen_889[[pixel]] <- Model_chosen[[pix_in_995]]
+    if(is.character(Model_chosen[[pix_in_995]])){work_pix_tmp[pixel]<-0} else {work_pix_tmp[pixel]<-1}
+  }#end for pixel
+  cost_fp_simple_lasso <- 100 # Misses: this should be associated with a higher cost, as it is more detrimental
+  cost_fn_simple_lasso <- 100 # False alarms
+  work_pix <- which(work_pix_tmp==1)
+  
+  # return the mean value, over all pixels, of the adjusted cutoff named segregation threshold
+  segreg_th <- adjust_cutoff(model_vector = Model_chosen_889,x1_train_list = x1_train_list_simple_lasso, y1_train_list = y1_train_list_simple_lasso,
+                             work_pix = work_pix, cost_fp = cost_fp_simple_lasso, cost_fn= cost_fn_simple_lasso)
+} #end if crop yield provided
 
 
 # General figure variables 
 world <- map_data("world")
 coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
-
-
-
-# Figure 1: Mean annual yield ####
-##################################
+final_pix_num <- dim(coord_subset)[1]
 ewbrks <- seq(-100,100,50)
 nsbrks <- seq(10,50,10)
 ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(abs(x), "°W"), ifelse(x > 0, paste(x, "°E"),x))))
 nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), ifelse(x > 0, paste(x, "°N"),x))))
 
-DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
-                       meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
-pixels_excluded <- as.logical(1-(1:pix_num %in% final_pixels_coord$ref_in_995)) # Excluded grid points according to section 2.2 of the article
-DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
-                              lat = Raw_mean_yield[pixels_excluded,"latitudes"])
 
-ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
-  geom_polygon(data = world, aes(long, lat, group=group),
-               fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_meanY$meany)) +
-  scale_fill_gradient2(midpoint = max(DF_meanY$meany, na.rm = T)/2,
-                       limits=c(0,max(DF_meanY$meany)),
-                       low = "#f7fcb9", mid = "#addd8e", high = "#31a354") +
-  theme(panel.ontop = F, panel.grid = element_blank(),
-        panel.border = element_rect(colour = "black", fill = NA),
-        axis.text.x = element_text(size = 15),
-        axis.text.y = element_text(size = 15))+
-  # ylab(expression("Lat " ( degree*N))) +
-  # xlab(expression("Lon " ( degree*E))) +
-  scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
-  scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-  coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
-              ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
-              ratio = 1)+
-  labs(fill=expression(paste("Mean yield [t ", ha^{-1},"]")))+
-  theme(legend.title = element_text(size = 15), legend.text = element_text(size = 14),
-        axis.title.x=element_blank(),axis.title.y=element_blank())+
-  geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
-             color = "black", size = 0.89, pch=4)
-ggsave(filename = "Raw_mean_yield.png", width = 20, height = 4)
+# Figure 1: Mean annual yield ####
+##################################
+
+if (crop_yield_provided) {
+  DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
+                         meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
+  pixels_excluded <- as.logical(1-(1:pix_num %in% final_pixels_coord$ref_in_995)) # Excluded grid points according to section 2.2 of the article
+  DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
+                                lat = Raw_mean_yield[pixels_excluded,"latitudes"])
+  
+  ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_meanY$meany)) +
+    scale_fill_gradient2(midpoint = max(DF_meanY$meany, na.rm = T)/2,
+                         limits=c(0,max(DF_meanY$meany)),
+                         low = "#f7fcb9", mid = "#addd8e", high = "#31a354") +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+          panel.border = element_rect(colour = "black", fill = NA),
+          axis.text.x = element_text(size = 15),
+          axis.text.y = element_text(size = 15))+
+    # ylab(expression("Lat " ( degree*N))) +
+    # xlab(expression("Lon " ( degree*E))) +
+    scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
+    scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
+    coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
+                ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
+                ratio = 1)+
+    labs(fill=expression(paste("Mean yield [t ", ha^{-1},"]")))+
+    theme(legend.title = element_text(size = 15), legend.text = element_text(size = 14),
+          axis.title.x=element_blank(),axis.title.y=element_blank())+
+    geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
+               color = "black", size = 0.89, pch=4)
+  ggsave(filename = "Raw_mean_yield.png", width = 20, height = 4)
+  
+}#end if crop yield provided
+
 
 
 # Figure 3: Linear correlation plot ####
 ########################################
-# Compute correlation /!\ might take  ~10min
-source(paste0(path_code,"/correlation_computation.R"))
+if (crop_yield_provided) {
+  # Compute correlation /!\ might take  ~10min
+  source(paste0(path_code,"/correlation_computation.R"))
+} else {
+  load(paste0(path_data,"/correlation_vectors.Rdata"))
+  france_meteovar_correlations <- list_correlations$france_meteovar_correlations
+  france_xtrm_correlations <- list_correlations$france_xtrm_correlations
+  global_meteovar_correlations <- list_correlations$global_meteovar_correlations
+  global_xtrm_correlations <- list_correlations$global_xtrm_correlations
+} #end if else crop yield provided
+
+
 
 # Set p lot layout
 pdf(file="correlation_plot.pdf", width = 12, height = 4)
@@ -173,18 +203,27 @@ csi <- rep(NA, final_pix_num) # Critical success index
 mypred <- vector("list", final_pix_num) # predicted crop yield
 fitted_bad_yield <- vector("list", final_pix_num) # assign predicted crop yield to either bad or normal year crop yield
 
-for (pixel in 1:final_pix_num) {
-  pix <- final_pixels_coord$ref_in_995[pixel]
-  coeff[[pixel]] <- coefficients(Model_chosen[[pix]])
-  mypred[[pixel]] <- predict(Model_chosen[[pix]], as.matrix(x1_test_list[[pix]]),type="response")
-  fitted_bad_yield[[pixel]] <- ifelse(mypred[[pixel]] > segreg_th,1,0)
-  con_tab <- InformationValue::confusionMatrix(actuals = as.matrix(y1_test_list[[pix]]),
-                      predictedScores = fitted_bad_yield[[pixel]], threshold = segreg_th)
-  csi[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
-  if(is.na(con_tab["0","0"])){
-    csi[pixel] <- 0
-  }
-}#end grid point
+for (pixel in 1:final_pix_num) { #extract coefficients
+  pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
+  coeff[[pixel]] <- coefficients(Model_chosen[[pix_in_995]])
+}#end for pixel
+
+
+if (crop_yield_provided) {
+  for (pixel in 1:final_pix_num) { #extract predicted yield and csi
+    pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
+    mypred[[pixel]] <- predict(Model_chosen[[pix_in_995]], as.matrix(x1_test_list[[pix_in_995]]),type="response")
+    fitted_bad_yield[[pixel]] <- ifelse(mypred[[pixel]] > segreg_th,1,0)
+    con_tab <- InformationValue::confusionMatrix(actuals = as.matrix(y1_test_list[[pix_in_995]]),
+                                                 predictedScores = fitted_bad_yield[[pixel]], threshold = segreg_th)
+    csi[pixel] <- con_tab["0","0"]/(con_tab["0","0"] + con_tab["1","0"] + con_tab["0","1"])
+    if(is.na(con_tab["0","0"])){
+      csi[pixel] <- 0
+    }
+  }#end for pixel
+} else {
+  load(paste0(path_data,"/csi_vector.Rdata"))
+} #end if else crop yield provided
 
 DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
 
@@ -219,26 +258,28 @@ ggsave(filename = "CSImap_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.pn
 # Figure 6: Correlation between Critical Success Index (CSI) and annual crop yield mean and variability ####
 ############################################################################################################
 
-MeanY_CSI<-data.frame(cbind(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000,csi))
-colnames(MeanY_CSI)<-c("mean_yield","csi") # data frame containing mean annual yield (transferred from kg to tonnes) and csi
-
-SDY_CSI<-data.frame(cbind(Raw_sd_yield[final_pixels_coord$ref_in_995,"sd_yield"]/1000,csi))
-colnames(SDY_CSI)<-c("sd_yield","csi") # data frame containing mean yield standard deviation (transferred from kg to tonnes) and csi
-
-p1<-ggplot(MeanY_CSI, aes(x=mean_yield, y=csi)) + geom_point()+
-  theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
-  labs( x = expression(paste("Mean yield [t ", ha^{-1},"]")))  + ylab("CSI") + theme(panel.grid.major = element_blank(),
-                                                  plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"),
-                                                  panel.grid.minor = element_blank(), 
-                                                  panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
-  theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
-  labs( x = expression(paste("Mean yield [t ", ha^{-1},"]"))) + ylab("CSI")+ theme(panel.grid.major = element_blank(),
-                                                               plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"), panel.grid.minor = element_blank(), 
-                                                               panel.background = element_blank(), axis.line = element_line(colour = "black"))
-
-ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("(a)", "(b)" ), font.label = list(size = 21, face="plain"))
+if (crop_yield_provided) {
+  MeanY_CSI<-data.frame(cbind(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000,csi))
+  colnames(MeanY_CSI)<-c("mean_yield","csi") # data frame containing mean annual yield (transferred from kg to tonnes) and csi
+  
+  SDY_CSI<-data.frame(cbind(Raw_sd_yield[final_pixels_coord$ref_in_995,"sd_yield"]/1000,csi))
+  colnames(SDY_CSI)<-c("sd_yield","csi") # data frame containing mean yield standard deviation (transferred from kg to tonnes) and csi
+  
+  p1<-ggplot(MeanY_CSI, aes(x=mean_yield, y=csi)) + geom_point()+
+    theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
+    labs( x = expression(paste("Mean yield [t ", ha^{-1},"]")))  + ylab("CSI") + theme(panel.grid.major = element_blank(),
+                                                                                       plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"),
+                                                                                       panel.grid.minor = element_blank(), 
+                                                                                       panel.background = element_blank(), axis.line = element_line(colour = "black"))
+  
+  p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
+    theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
+    labs( x = expression(paste("Mean yield [t ", ha^{-1},"]"))) + ylab("CSI")+ theme(panel.grid.major = element_blank(),
+                                                                                     plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"), panel.grid.minor = element_blank(), 
+                                                                                     panel.background = element_blank(), axis.line = element_line(colour = "black"))
+  
+  ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("(a)", "(b)" ), font.label = list(size = 21, face="plain"))
+} #end if crop yield provided
 
 
 
@@ -620,10 +661,15 @@ dev.off()
 ########################################################
 
 nb_month_GS <- integer(length = final_pix_num) # Number of months in the growing season
-for (pix in 1:final_pix_num) {
-  pixel <- final_pixels_coord$ref_in_995[pix]
-  nb_month_GS[pix] <- sum(substr(colnames(x1_train_list[[pixel]]), start = 1, stop = 3)=="pr_")
-}
+
+if (crop_yield_provided) {
+  for (pixel in 1:final_pix_num) {
+    pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
+    nb_month_GS[pixel] <- sum(substr(colnames(x1_train_list[[pix_in_995]]), start = 1, stop = 3)=="pr_")
+  }#end for pixel
+} else {
+  load(paste0(path_data,"/nb_months_GS_vector.Rdata"))
+} #end if else crop yield provided
 
 levels_nb_month <- cut(nb_month_GS, breaks = c(5,8,11,14), right = F)
 levels_nb_month <- gsub(","," - ",levels_nb_month,fixed=TRUE)
