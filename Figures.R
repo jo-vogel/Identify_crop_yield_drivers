@@ -29,8 +29,9 @@ seed=1994 # random seed
 train_size <- 70 # Percentage of data assigned to the training data set
 
 message("Precise here if climate and crop data are available. The corresponding climate and crop simulations to run the code are available 
-from Tianyi Zhang (zhangty@post.iap.ac.cn) and Karin van der Wiel (wiel@knmi.nl) on request, respectively. Using the results of the Lasso 
-logistic regression model (Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pix.RData) it is 
+from Tianyi Zhang (zhangty@post.iap.ac.cn) and Karin van der Wiel (wiel@knmi.nl) on request, respectively. The authors can then provide 
+the pre processed data (extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata) to the reader. Using the results of the Lasso 
+logistic regression model data only (Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pix.RData) it is still 
 possible to create the figures 5, 7, 8, A3, A4 and the supplementary gifs with Figures.R without requiring the climate and crop simulation data.")
 climate_crop_provided <- FALSE
 
@@ -265,6 +266,7 @@ ggsave(filename = "CSImap_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.pn
 ############################################################################################################
 
 if (climate_crop_provided) {
+  message("For this section, run Fig. 5 first")
   MeanY_CSI<-data.frame(cbind(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000,csi))
   colnames(MeanY_CSI)<-c("mean_yield","csi") # data frame containing mean annual yield (transferred from kg to tonnes) and csi
   
@@ -280,21 +282,23 @@ if (climate_crop_provided) {
   
   p2<-ggplot(SDY_CSI, aes(x=sd_yield, y=csi)) + geom_point()+
     theme(axis.text = element_text(size = 16), axis.title = element_text(size = 17)) +
-    labs( x = expression(paste("Mean yield [t ", ha^{-1},"]"))) + ylab("CSI")+ theme(panel.grid.major = element_blank(),
+    labs( x = expression(paste("Standard deviation of yield [t", ha^{-1},"]"))) + ylab("CSI")+ theme(panel.grid.major = element_blank(),
                                                                                      plot.margin = margin(1.2, 1.2, 1.2, 1.2, "cm"), panel.grid.minor = element_blank(), 
                                                                                      panel.background = element_blank(), axis.line = element_line(colour = "black"))
   
   ggarrange(p1, p2, nrow = 1,ncol=2,labels = c("(a)", "(b)" ), font.label = list(size = 21, face="plain"))
+  
+  ggsave(filename = "Scatterplot_CSIvsYield_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 15, height = 7)    
 } #end if crop yield provided
 
-ggsave(filename = "Scatterplot_CSIvsYield_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.png", width = 15, height = 7)                      
+                  
 
 
                         
 # Figure 7: Maps illustrating the selected predictors by the Lasso logistical regression ####
 #############################################################################################
 
-message("run Fig. 5 for this section first")
+message("For this section, run Fig. 5 first")
 # Plot number of selected variables and climatic extreme indicators (Fig 7a and b) ####
 
 
