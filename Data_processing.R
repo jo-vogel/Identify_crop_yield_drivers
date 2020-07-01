@@ -28,6 +28,7 @@ colnames(Model_data) <- c("Yield", "dtr", "frs", "txx", "tnn", "rx5", "tx90p", "
                           "pr_Aug_Y1", "pr_Sep_Y1", "pr_Oct_Y1", "pr_Nov_Y1", "pr_Dec_Y1", "pr_Jan_Y2",
                           "pr_Feb_Y2", "pr_Mar_Y2", "pr_Apr_Y2", "pr_May_Y2", "pr_Jun_Y2", "pr_Jul_Y2",
                           "pr_Aug_Y2", "pr_Sep_Y2", "pr_Oct_Y2", "pr_Nov_Y2", "pr_Dec_Y2")
+allvariables <- colnames(Model_data)[-1] # all driver variables (excluding crop yield)
 
 
 Yield <- Data_xtrm_standardized$yield

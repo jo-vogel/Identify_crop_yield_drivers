@@ -4,7 +4,7 @@
 
 # This code was run under version 3.6 of R
 
-library("sp");library("ncdf4");library("corrplot");library('oce')
+library(sp);library(ncdf4);library(corrplot);library(oce)
 
 monthlymeteovar_xtrm <- readRDS(paste0(path_data,"/extremeindices_and_monthlymeteovar_995pix.Rdata"))
 

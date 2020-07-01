@@ -20,8 +20,8 @@
 ##### Load data ####
 ####################
 
-library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind);library(maps)
-library(stringr);library(ggplot2);library(viridis);library(raster);library(rgdal);library(pbapply)
+library(glmnet);library(InformationValue);library(ROCR);library(ggpubr);library(abind);library(maps);library(corrplot)
+library(oce);library(stringr);library(ggplot2);library(viridis);library(raster);library(rgdal);library(pbapply)
 
 path_data <- message("insert data directory here") # Insert path of the input data here
 path_code <- message("insert code directory here") # Insert path of the code here
@@ -30,7 +30,7 @@ train_size <- 70 # Percentage of data assigned to the training data set
 
 message("Precise here if climate and crop data are available. The corresponding climate and crop simulations to run the code are available 
 from Tianyi Zhang (zhangty@post.iap.ac.cn) and Karin van der Wiel (wiel@knmi.nl) on request, respectively. Using the results of the Lasso 
-logistic regression model (Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pix.RData, see description above) it is 
+logistic regression model (Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pix.RData) it is 
 possible to create the figures 5, 7, 8, A3, A4 and the supplementary gifs with Figures.R without requiring the climate and crop simulation data.")
 climate_crop_provided <- FALSE
 
@@ -49,20 +49,23 @@ load(paste0(path_data,"/final_889pix_coords.Rdata"))
 # Load matrix with all coordinates required for Fig. 8
 coord_all <- read.csv2(paste0(path_data,"/coord_all.csv"), row.names=1)
 # Shapefile of borders of the continents
-continents <- readOGR(paste0(path_data,"/continent.shp")) # from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372
+continents <- readOGR(paste0(path_data,"/continent.shp")) 
+message("This shapefile can be downloaded from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372.")
 
 # The statistical model is calculated using  Lasso_regression.R
 load(paste0(path_data,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
 Model_chosen <- lasso_model_lambda1se # Lasso regression using lambda 1 standard error
 
-# Load additional reqruied functions
+# Load additional required functions
 source(paste0(path_code,"/additional_functions.R"))
 
 
 if (climate_crop_provided) {
   # Preprocess the data
   source(paste0(path_code,"/Data_processing.R"))
-} #end if crop yield provided
+} else { # Load the preprocessed data
+  load(paste0(path_data,"/Required_variables.RData"))
+}
 
 
 
@@ -563,10 +566,12 @@ loc_no_am_pixels_num <- c(loc_no_am_pixels_num,391)
 loc_asia_pixels_num <- c(loc_asia_pixels_num,3, 294, 563)
 
 # Get data into right format for the plot
-var_num <- apply(non_na_col,1,sum) # Number of predictor variables for each grid point
-numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
-for (i in 1:pix_num){
-  names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
+if (climate_crop_provided) {
+  var_num <- apply(non_na_col,1,sum) # Number of predictor variables for each grid point
+  numLevels_list <- sapply(1:pix_num, function(x){ rep(1,times=var_num[x])})
+  for (i in 1:pix_num){
+    names(numLevels_list[[i]]) <-  colnames(x1_test_list[[i]])
+  }
 }
 
 coefs_seas <- sapply(1:length(coeff), function(x) names(numLevels_list[[final_pixels_coord$ref_in_995[x]]])[coeff[[x]][-1]!=0])
@@ -881,7 +886,6 @@ ggsave(filename = "selection_of_coeff-dtr-frs-rx5-tx90.png", width = 30, height 
 #############################################################
 
 message("run Fig. 5 for this section first")
-allvariables <- colnames(Model_data)[-1]
 allvariables_adj <- allvariables # Adjust names
 allvariables_adj <- gsub(x=allvariables_adj, pattern="vpd", replacement = "VPD")
 allvariables_adj <- gsub(x=allvariables_adj, pattern="tmax", replacement = "Tmax")
@@ -922,3 +926,6 @@ for (varia in 1:length(allvariables)) {
           legend.text = element_text(size = 14))
   ggsave(filename=paste0(varia_name,".jpg"), width = 20, height = 6)
 }
+
+# save the variables required for running this file witout crop and climate data
+# save(global_meteovar_correlations, global_xtrm_correlations, france_meteovar_correlations, france_xtrm_correlations, csi, nb_month_GS, numLevels_list, allvariables, file="Required_variables.RData") 

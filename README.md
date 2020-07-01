@@ -10,5 +10,6 @@ Figures.R creates the figures 1, 3, 5, 6, 7, 8, A3, A4 and the supplementary gif
 Plot_composites.py creates the figures 2, A1 and A2 of the article.
 Data_processing.R, correlation_computation.R, and additional_functions.R are subroutines required for Lasso_regression.R and Figures.R.
 Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pix.RData contains the results of the Lasso logistic regression model using a lambda with standard error for the 995 grid points. It was created using Lasso_regression.R.
+Required_variables.RData contains a list of data required for plotting Fig 3, 5, 8, A3 and the supplementary GIFs when running the file Figures.R without the crop and climate data. They were extracted as stated in the last line in Figures.R.
 
 The corresponding climate and crop simulations to run the code are available from Tianyi Zhang (zhangty@post.iap.ac.cn) and Karin van der Wiel (wiel@knmi.nl) on request, respectively. Using the results of the Lasso logistic regression model (Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pix.RData, see description above) it is possible to create the figures 5, 7, 8, A3, A4 and the supplementary gifs with Figures.R without requiring the climate and crop simulation data.
