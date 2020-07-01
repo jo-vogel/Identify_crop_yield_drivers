@@ -51,7 +51,7 @@ load(paste0(path_data,"/final_889pix_coords.Rdata"))
 coord_all <- read.csv2(paste0(path_data,"/coord_all.csv"), row.names=1)
 # Shapefile of borders of the continents
 continents <- readOGR(paste0(path_data,"/continent.shp")) 
-message("This shapefile can be downloaded from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372.")
+message("This shapefile can be downloaded from https://www.arcgis.com/home/item.html?id=5cf4f223c4a642eb9aa7ae1216a04372 .")
 
 # The statistical model is calculated using  Lasso_regression.R
 load(paste0(path_data,"/Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed",seed, "_train", train_size,"_995pix.Rdata"))
@@ -151,13 +151,7 @@ if (climate_crop_provided) {
 if (climate_crop_provided) {
   # Compute correlation /!\ might take  ~10min
   source(paste0(path_code,"/correlation_computation.R"))
-} else {
-  load(paste0(path_data,"/correlation_vectors.Rdata"))
-  france_meteovar_correlations <- list_correlations$france_meteovar_correlations
-  france_xtrm_correlations <- list_correlations$france_xtrm_correlations
-  global_meteovar_correlations <- list_correlations$global_meteovar_correlations
-  global_xtrm_correlations <- list_correlations$global_xtrm_correlations
-} #end if else crop yield provided
+} #end if crop yield provided
 
 
 
@@ -206,8 +200,6 @@ dev.off()
 #############################################
 
 coeff  <-list() # List of all predictors of a given pixel
-csi <- rep(NA, final_pix_num) # Critical success index
-mypred <- vector("list", final_pix_num) # predicted crop yield
 fitted_bad_yield <- vector("list", final_pix_num) # assign predicted crop yield to either bad or normal year crop yield
 
 for (pixel in 1:final_pix_num) { #extract coefficients
@@ -217,6 +209,9 @@ for (pixel in 1:final_pix_num) { #extract coefficients
 
 
 if (climate_crop_provided) {
+  csi <- rep(NA, final_pix_num) # Critical success index
+  mypred <- vector("list", final_pix_num) # predicted crop yield
+  
   for (pixel in 1:final_pix_num) { #extract predicted yield and csi
     pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
     mypred[[pixel]] <- predict(Model_chosen[[pix_in_995]], as.matrix(x1_test_list[[pix_in_995]]),type="response")
@@ -228,9 +223,7 @@ if (climate_crop_provided) {
       csi[pixel] <- 0
     }
   }#end for pixel
-} else {
-  load(paste0(path_data,"/csi_vector.Rdata"))
-} #end if else crop yield provided
+} #end if crop yield provided
 
 DF_csi <- data.frame(lon=coord_subset[,1], lat = coord_subset[,2], csi = csi)
 
@@ -674,16 +667,15 @@ dev.off()
 # Figure A3: Number of months in the growing season ####
 ########################################################
 
-nb_month_GS <- integer(length = final_pix_num) # Number of months in the growing season
+
 
 if (climate_crop_provided) {
+  nb_month_GS <- integer(length = final_pix_num) # Number of months in the growing season
   for (pixel in 1:final_pix_num) {
     pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
     nb_month_GS[pixel] <- sum(substr(colnames(x1_train_list[[pix_in_995]]), start = 1, stop = 3)=="pr_")
   }#end for pixel
-} else {
-  load(paste0(path_data,"/nb_months_GS_vector.Rdata"))
-} #end if else crop yield provided
+} #end if crop yield provided
 
 levels_nb_month <- cut(nb_month_GS, breaks = c(5,8,11,14), right = F)
 levels_nb_month <- gsub(","," - ",levels_nb_month,fixed=TRUE)
