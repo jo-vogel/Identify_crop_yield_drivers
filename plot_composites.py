@@ -2,7 +2,8 @@
 
 """
 This script reads daily data from three gridpoints and their annual crop
-yield and produces Figures 2, A1, A2 in the paper.
+yield and produces Figures 2, A1, A2 in the paper. The corresponding climate and crop simulations to run the code are available 
+from Tianyi Zhang (zhangty@post.iap.ac.cn) and Karin van der Wiel (wiel@knmi.nl) on request, respectively.
 
 INPUT:
 - meteo_daily_FR_ensemblemode.nc

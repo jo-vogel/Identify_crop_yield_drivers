@@ -28,11 +28,14 @@ path_code <- message("insert code directory here") # Insert path of the code her
 seed=1994 # random seed
 train_size <- 70 # Percentage of data assigned to the training data set
 
-message("Precise here if you were provided the global crop yield data")
-crop_yield_provided <- FALSE
+message("Precise here if climate and crop data are available. The corresponding climate and crop simulations to run the code are available 
+from Tianyi Zhang (zhangty@post.iap.ac.cn) and Karin van der Wiel (wiel@knmi.nl) on request, respectively. Using the results of the Lasso 
+logistic regression model (Lasso_lambda1se_month_xtrm_LASSO_threshbadyield005_seed1994_train70_995pix.RData, see description above) it is 
+possible to create the figures 5, 7, 8, A3, A4 and the supplementary gifs with Figures.R without requiring the climate and crop simulation data.")
+climate_crop_provided <- FALSE
 
 
-if (crop_yield_provided) {
+if (climate_crop_provided) {
   # Load the preprocessed standardized climate variables and crop yield for all 995 grid points in the northern hemisphere
   load(paste0(path_data,"/extremeindices_and_monthlymeteovar_rescaled_995pix.Rdata")) 
   # Mean yield and yield standard deviation for all 995 grid points
@@ -56,7 +59,7 @@ Model_chosen <- lasso_model_lambda1se # Lasso regression using lambda 1 standard
 source(paste0(path_code,"/additional_functions.R"))
 
 
-if (crop_yield_provided) {
+if (climate_crop_provided) {
   # Preprocess the data
   source(paste0(path_code,"/Data_processing.R"))
 } #end if crop yield provided
@@ -65,7 +68,7 @@ if (crop_yield_provided) {
 
 ##### Adjust cutoff level #####
 
-if (crop_yield_provided) {
+if (climate_crop_provided) {
   y1_train_list_simple_lasso <- y1_train_list
   x1_train_list_simple_lasso <- x1_train_list
   Model_chosen_889 <- list()
@@ -104,7 +107,7 @@ nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), 
 # Figure 1: Mean annual yield ####
 ##################################
 
-if (crop_yield_provided) {
+if (climate_crop_provided) {
   DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
                          meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
   pixels_excluded <- as.logical(1-(1:pix_num %in% final_pixels_coord$ref_in_995)) # Excluded grid points according to section 2.2 of the article
@@ -141,7 +144,7 @@ if (crop_yield_provided) {
 
 # Figure 3: Linear correlation plot ####
 ########################################
-if (crop_yield_provided) {
+if (climate_crop_provided) {
   # Compute correlation /!\ might take  ~10min
   source(paste0(path_code,"/correlation_computation.R"))
 } else {
@@ -209,7 +212,7 @@ for (pixel in 1:final_pix_num) { #extract coefficients
 }#end for pixel
 
 
-if (crop_yield_provided) {
+if (climate_crop_provided) {
   for (pixel in 1:final_pix_num) { #extract predicted yield and csi
     pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
     mypred[[pixel]] <- predict(Model_chosen[[pix_in_995]], as.matrix(x1_test_list[[pix_in_995]]),type="response")
@@ -258,7 +261,7 @@ ggsave(filename = "CSImap_Lasso_lambda1se_adjcutoff_seed1994_training70_889GP.pn
 # Figure 6: Correlation between Critical Success Index (CSI) and annual crop yield mean and variability ####
 ############################################################################################################
 
-if (crop_yield_provided) {
+if (climate_crop_provided) {
   MeanY_CSI<-data.frame(cbind(Raw_mean_yield[final_pixels_coord$ref_in_995,"mean_yield"]/1000,csi))
   colnames(MeanY_CSI)<-c("mean_yield","csi") # data frame containing mean annual yield (transferred from kg to tonnes) and csi
   
@@ -664,7 +667,7 @@ dev.off()
 
 nb_month_GS <- integer(length = final_pix_num) # Number of months in the growing season
 
-if (crop_yield_provided) {
+if (climate_crop_provided) {
   for (pixel in 1:final_pix_num) {
     pix_in_995 <- final_pixels_coord$ref_in_995[pixel]
     nb_month_GS[pixel] <- sum(substr(colnames(x1_train_list[[pix_in_995]]), start = 1, stop = 3)=="pr_")
