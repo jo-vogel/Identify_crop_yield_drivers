@@ -104,8 +104,10 @@ coord_subset <- cbind(final_pixels_coord$longitude, final_pixels_coord$latitude)
 final_pix_num <- dim(coord_subset)[1]
 ewbrks <- seq(-100,100,50)
 nsbrks <- seq(10,50,10)
-ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(abs(x), "°W"), ifelse(x > 0, paste(x, "°E"),x))))
-nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), ifelse(x > 0, paste(x, "°N"),x))))
+# ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste(abs(x), "°W"), ifelse(x > 0, paste(x, "°E"),x))))
+# nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste(abs(x), "°S"), ifelse(x > 0, paste(x, "°N"),x))))
+ewlbls <- unlist(lapply(ewbrks, function(x) ifelse(x < 0, paste0(abs(x), ' \u00B0', "W"), ifelse(x > 0, paste0(x, ' \u00B0', "E"),x)) ))
+nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste0(abs(x), ' \u00B0', "S"), ifelse(x > 0, paste0(x, ' \u00B0', "N"),x)) ))
 
 
 # Figure 1: Mean annual yield ####
