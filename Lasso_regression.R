@@ -18,7 +18,7 @@ path_data <- message("insert data directory here") # Insert path of the input da
 path_model <- message("insert model directory here") # where to store the output model
 path_code <- message("insert code directory here") # Insert path of the code here
 
-load(paste0(path_data,"extremeindices_and_monthlymeteovar_rescaled_995pix.RData"))
+load(paste0(path_data,"/extremeindices_and_monthlymeteovar_rescaled_995pix.RData"))
 
 source(paste0(path_code,"/Data_processing.R"))
 
@@ -80,7 +80,7 @@ save(model_cv_fitting, file = paste0(path_model, "/cv_month_xtrm_LASSO_threshbad
 
 
 # Run the model with lambda1se and lambda min just obtained #####
-load(file = paste0(path_model, "cv_month_xtrm_LASSO_threshbadyield005_seed",
+load(file = paste0(path_model, "/cv_month_xtrm_LASSO_threshbadyield005_seed",
                    seed, "_train", train_size, "_995pixels.RData"))
 
 
