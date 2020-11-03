@@ -284,6 +284,6 @@ for country in gp:
     fig.canvas.draw()  # Work-around for when tight_layout() produces an error
     plt.tight_layout()
     # fig.savefig(data_dir[:-8] + 'Plots/' + country +
-    #             '_yearly_composite_v2.pdf')
+    #             '_yearly_composite_rev.pdf')
     plt.show()
        
