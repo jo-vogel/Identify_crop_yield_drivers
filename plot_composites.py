@@ -2,8 +2,7 @@
 
 """
 This script reads daily data from three gridpoints and their annual crop
-yield and produces Figures 2, A1, A2 in the paper. The corresponding climate and crop simulations to run the code are available 
-from Tianyi Zhang (zhangty@post.iap.ac.cn) and Karin van der Wiel (wiel@knmi.nl) on request, respectively.
+yield and produces Figures 2, A1, A2 in the paper.
 
 INPUT:
 - meteo_daily_FR_ensemblemode.nc
@@ -16,16 +15,21 @@ Figures 2, A1, A2 in the paper.
 
 author: Christoph A Sauter
 email: christoph.sauter@strath.ac.uk
-date: 22. June 2020
+date: 22. Sep 2020
 Python version: 3.7
 """
 
 from netCDF4 import Dataset
 import numpy as np
 from numba import jit
+import pandas as pd
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+from datetime import datetime, timedelta
+import matplotlib.dates as mdates
+from matplotlib.ticker import FuncFormatter
+    
 
 
 # -------------------------
@@ -90,29 +94,49 @@ def subplot_country_location(ax0, loc_lon, loc_lat):
     return None
 
 
-def plot_mean_with_percentiles(x, alpha, plot_color, percentile_value):
+def plot_mean_with_percentiles(x, ax, alpha, plot_color, percentile_value, 
+                               start):
     """
     :param x: variable with axis 0:
     :param alpha: alpha value of percentile shading
     :param plot_color: plot color
     :param percentile_value: draws shades from upper to lower percentile
+    :param start: sowing date day (days since 01.01.2035)
     :return: the figure
     """
+
     x_lower_bound = np.percentile(x, percentile_value, axis=0)
     x_upper_bound = np.percentile(x, 100-percentile_value, axis=0)
 
-    plt.plot(range(0, x.shape[1]), np.mean(x, axis=0),
+    months = mdates.MonthLocator()
+    months_fmt = mdates.DateFormatter('%b')
+    # Function for displaying only first letter of month
+    def m_fmt(x, pos=None):
+        return months_fmt(x)[0]
+    
+    base_date = datetime.strptime('2035-01-01', '%Y-%m-%d')
+    start_date = base_date + timedelta(days=start)
+    end_date = start_date + timedelta(days=x.shape[1])
+    date_range = pd.date_range(start_date, end_date)
+    
+    
+    ax.plot(date_range[:-1], np.mean(x, axis=0), 
              linewidth=2, color=plot_color)
 
-    plt.fill_between(range(0, x.shape[1]), x_lower_bound, x_upper_bound,
+    ax.fill_between(date_range[:-1], x_lower_bound, x_upper_bound,
                      alpha=alpha, color=plot_color, linewidth=0,
                      label='_nolegend_')
 
-    plt.xticks([1,  31,  62,  93, 121, 152, 182, 213, 243, 274, 305],
-                   ['N', 'D', 'J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S'])
+    ax.xaxis.set_major_locator(months)
+    ax.xaxis.set_major_formatter(FuncFormatter(m_fmt))
+    ax.set_xlim(start_date - timedelta(days=10), 
+                end_date + timedelta(days=10))
+    
     for pos in ['right', 'top']:
         plt.gca().spines[pos].set_visible(False)
+    
     return None
+
 
 
 # -------------------------
@@ -120,8 +144,8 @@ def plot_mean_with_percentiles(x, alpha, plot_color, percentile_value):
 # -------------------------
 
 # EDIT TO DIRECTORY WHERE THE FILES ARE:
-data_dir = '/Users/christoph/Desktop/DAMOCLES_training_school/' \
-           'WorkingGroup1/nc_data/'
+data_dir = ('/Users/christoph/Desktop/PhD/DAMOCLES_training_school/'
+            'WorkingGroup1/nc_data/')
 
 met_var_list = ['dps', 'pr', 'rsds', 'sfcwind', 'tasmax', 'tasmin', 'vpd']
 
@@ -129,9 +153,10 @@ crop = read_nc_data(data_dir, file_name='crop_yield_NH.nc',
                     var_list=['yield', 'lat', 'lon'])
 
 gp = ['FR', 'CH2', 'US3']
-# France 47.7 ​०N, 1.1 ​०E
-# China 33.1 ​०N, 114.8 ०​E
-# USA  44.3 ०​N, 90.0 ०​ W
+# France 47.7 ​N, 1.1 ​E
+# China 33.1 ​N, 118.1 E
+# USA  44.3 ​N, 90.0 W
+
 data_gp = {}
 for i, loc in enumerate(gp):
     fname = 'meteo_daily_' + gp[i] + '_ensemblemode.nc'
@@ -146,6 +171,17 @@ gp_locs_fullnames = {'FR': 'France',
 gp_locs = {'FR': [42, 160],
            'CH2': [27, 264],
            'US3': [39, 79]}
+
+# Sowing date; Beginning of growing season
+gp_start = {'FR': 304,
+            'CH2': 272,
+            'US3': 263}
+
+# Length of the longest growing season
+gp_length_max = {'FR': 310,
+                 'CH2': 258,
+                 'US3': 333}
+
 
 # divide all data into negative extremes and others (threshold 5th percentile)
 th_percentile = 0.05
@@ -166,8 +202,10 @@ for loc in gp_locs:
                                    met_var+'_av': var_av})
 
     # Convert from Kelvin to Celsius
-    temp_vars = ['dps_neg', 'dps_av', 'tasmax_neg', 'tasmax_av', 'tasmin_neg',
-                 'tasmin_av']
+    temp_vars = ['dps_neg', 'dps_av', 
+                 'tasmax_neg', 'tasmax_av', 
+                 'tasmin_neg', 'tasmin_av']
+    
     for tvar in temp_vars:
         data_extr[loc][tvar] -= 273.16
 
@@ -225,13 +263,17 @@ for country in gp:
                 ax = fig.add_subplot('42' + str(var_counter+1))
                 ax.tick_params(labelsize=ax_fontsize)
                 plot_mean_with_percentiles(data_extr[country][var
-                                           + '_neg'][:, 304:304+320],
-                                           alpha=alpha, plot_color=orange,
-                                           percentile_value=10)
+                    + '_neg'][:, gp_start[country]:gp_start[country]
+                                 +gp_length_max[country]], 
+                    ax=ax, alpha=alpha, plot_color=orange,
+                    percentile_value=10, start=gp_start[country],
+                    )
                 plot_mean_with_percentiles(data_extr[country][var
-                                           + '_av'][:, 304:304+320],
-                                           alpha=alpha, plot_color=blue,
-                                           percentile_value=10)
+                    + '_av'][:, gp_start[country]:gp_start[country]
+                                +gp_length_max[country]], 
+                    ax=ax, alpha=alpha, plot_color=blue, percentile_value=10, 
+                    start=gp_start[country]
+                    )
                 plt.ylabel(var_names_plot[var], fontsize=ax_fontsize+2)
                 plt.title('(' + alphabet[var_counter] + ')',
                           loc='left', fontsize=lab_fontsize)
@@ -242,5 +284,6 @@ for country in gp:
     fig.canvas.draw()  # Work-around for when tight_layout() produces an error
     plt.tight_layout()
     # fig.savefig(data_dir[:-8] + 'Plots/' + country +
-    #             '_yearly_composite_v1.pdf')
+    #             '_yearly_composite_v2.pdf')
     plt.show()
+       
