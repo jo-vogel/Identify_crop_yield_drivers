@@ -64,8 +64,11 @@ source(paste0(path_code,"/additional_functions.R"))
 if (climate_crop_provided) {
   # Preprocess the data
   source(paste0(path_code,"/Data_processing.R"))
+  Raw_fifth_perc <- cbind(fifth_perc, Raw_mean_yield[,"longitudes"], Raw_mean_yield[,"latitudes"])
+  colnames(Raw_fifth_perc) <- c("fifth_perc", "longitudes", "latitudes")
 } else { # Load the preprocessed data
   load(paste0(path_data,"/Required_variables.RData"))
+  load(paste0(path_data,"/Raw_perc5th_yield_NH.Rdata"))
 }
 
 
@@ -115,34 +118,92 @@ nslbls <- unlist(lapply(nsbrks, function(x) ifelse(x < 0, paste0(abs(x), ' \u00B
 
 if (climate_crop_provided) {
   DF_meanY <- data.frame(lon=Raw_mean_yield[,"longitudes"], lat = Raw_mean_yield[,"latitudes"],
-                         meany = Raw_mean_yield[,"mean_yield"]/1000) # data frame containing mean annual yield (transferred from kg to tonnes) and associated coordinates
-  pixels_excluded <- as.logical(1-(1:pix_num %in% final_pixels_coord$ref_in_995)) # Excluded grid points according to section 2.2 of the article
+                         meany = Raw_mean_yield[,"mean_yield"]/1000)
+  
+  pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995))
   DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
                                 lat = Raw_mean_yield[pixels_excluded,"latitudes"])
   
-  ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
+  P1 <- ggplot(data = DF_meanY, aes(x=lon, y=lat)) +
     geom_polygon(data = world, aes(long, lat, group=group),
                  fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_meanY$meany)) +
     scale_fill_gradient2(midpoint = max(DF_meanY$meany, na.rm = T)/2,
-                         limits=c(0,max(DF_meanY$meany)),
+                         limits=c(0,10),
                          low = "#f7fcb9", mid = "#addd8e", high = "#31a354") +
-    theme(panel.ontop = F, panel.grid = element_blank(),
-          panel.border = element_rect(colour = "black", fill = NA),
-          axis.text.x = element_text(size = 15),
-          axis.text.y = element_text(size = 15))+
-    # ylab(expression("Lat " ( degree*N))) +
-    # xlab(expression("Lon " ( degree*E))) +
-    scale_x_continuous(breaks = ewbrks, labels = ewlbls, expand = c(0, 0)) +
-    scale_y_continuous(breaks = nsbrks, labels = nslbls, expand = c(0, 0)) +
-    coord_fixed(xlim = c(min(coord_subset[,1])-1, max(coord_subset[,1]+1)),
+   theme(panel.ontop = F, panel.grid = element_blank(),
+         panel.border = element_rect(colour = "black", fill = NA),
+         axis.text = element_text(size = 12), axis.title = element_text(size = 12),
+          axis.text.x = element_text(size = 12),
+          axis.text.y = element_text(size = 12))+
+   ylab("Lat (°N)") +
+   xlab("Lon (°E)") +
+   coord_fixed(xlim = c(-115, 130),
                 ylim = c(min(DF_meanY$lat), max(DF_meanY$lat)),
+               ratio = 1)+
+    labs(fill=expression(paste("Mean yield (t ", ha^{-1},")"))  )+
+   theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+         legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
+    geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
+              color = "black", size = 0.89, pch=4)
+  
+  levels_5thperc <- cut(100*(Raw_fifth_perc[,"fifth_perc"]-Raw_mean_yield[,"mean_yield"])/Raw_mean_yield[,"mean_yield"],
+                       breaks = c(-100, -90, -80, -70, -60, -50,
+                                  -40, -30, -20, -10, 0), right = F)
+  
+  DF_5thperc <- data.frame(lon=Raw_fifth_perc[,"longitudes"], lat = Raw_fifth_perc[,"latitudes"],
+                           fithperc = levels_5thperc)
+  pixels_excluded <- as.logical(1-(1:total_nb_pix %in% final_pixels_coord$ref_in_995))
+  DF_5thperc$fithperc[pixels_excluded] <- rep(NA, sum(pixels_excluded))
+  DF_excluded_pix <- data.frame(lon = Raw_mean_yield[pixels_excluded,"longitudes"],
+                                lat = Raw_mean_yield[pixels_excluded,"latitudes"])
+  
+  P2 <- ggplot(data = DF_5thperc, aes(x=lon, y=lat)) +
+    geom_polygon(data = world, aes(long, lat, group=group),
+                 fill="white", color="black", size=0.3)+  geom_tile(aes(fill=DF_5thperc$fithperc)) +
+    scale_fill_manual(values=c("[-100,-90)" = "black","[-90,-80)" = "#800026", "[-80,-70)" = "#bd0026",
+                               "[-70,-60)" = "#e31a1c", "[-60,-50)" = "#fc4e2a", "[-50,-40)" = "#fd8d3c",
+                               "[-40,-30)" = "#feb24c", "[-30,-20)" = "#fed976", "[-20,-10)" = rgb(1,237/255,160/255), "[-10,0)" = "#ffffcc"),
+                      breaks=c("[-10,0)","[-20,-10)", "[-30,-20)", "[-40,-30)", "[-50,-40)", "[-60,-50)",
+                              "[-70,-60)","[-80,-70)", "[-90,-80)", "[-100,-90)")) +
+    theme(panel.ontop = F, panel.grid = element_blank(),
+         panel.border = element_rect(colour = "black", fill = NA),
+          axis.text = element_text(size = 12), axis.title = element_text(size = 12),
+          axis.text.x = element_text(size = 12),
+          axis.text.y = element_text(size = 12))+
+    ylab("Lat (°N)") +
+    xlab("Lon (°E)") +
+    coord_fixed(xlim = c(-115, 130),
+                ylim = c(min(DF_5thperc$lat), max(DF_5thperc$lat)),
                 ratio = 1)+
-    labs(fill=expression(paste("Mean yield [t ", ha^{-1},"]")))+
-    theme(legend.title = element_text(size = 15), legend.text = element_text(size = 14),
-          axis.title.x=element_blank(),axis.title.y=element_blank())+
+    labs(fill="Relative difference\n between\n 5th percentile\n and mean yield (%)"  )+
+    theme(plot.title = element_text(size = 20), plot.subtitle = element_text(size = 15),
+          legend.title = element_text(size = 15), legend.text = element_text(size = 14))+
     geom_point(data = DF_excluded_pix, aes(x = DF_excluded_pix$lon, y = DF_excluded_pix$lat),
                color = "black", size = 0.89, pch=4)
-  ggsave(filename = "Raw_mean_yield.png", width = 20, height = 4)
+  
+  L1 <- get_legend(P1+ theme(legend.title = element_text(size=15),
+                             legend.text = element_text(size=12),
+                             legend.key.size = unit(1,"line")))
+  L2 <- get_legend(P2+ theme(legend.title = element_text(size=15),
+                             legend.text = element_text(size=12),
+                             legend.key.size = unit(1,"line")))
+  
+  ggarrange(P1 + theme(legend.position = "none",
+                       axis.title.x=element_blank(),axis.title.y=element_blank(),
+                       axis.text.x = element_text(size = 10),
+                       axis.text.y = element_text(size = 10)),
+            L1,
+            P2 + theme(legend.position = "none",
+                       axis.title.x=element_blank(),axis.title.y=element_blank(),
+                       axis.text.x = element_text(size = 10),
+                       axis.text.y = element_text(size = 10)),
+            L2,
+            nrow = 2, ncol=2,labels = c("(a)", "", "(b)", ""),
+            label.x = -0.01
+            ,widths=c(8,1.5), heights=c(1,1)
+            #, font.label = list(size = 14, face = "plain", color ="black")
+  )
+  ggsave(filename = "Raw_mean_yield_and_5th_perc.png", width = 20, height = 9)
   
 }#end if crop yield provided
 
