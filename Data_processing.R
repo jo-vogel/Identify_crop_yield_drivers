@@ -34,6 +34,8 @@ allvariables <- colnames(Model_data)[-1] # all driver variables (excluding crop 
 Yield <- Data_xtrm_standardized$yield
 threshold <- 0.05 # threshold for bad yields
 low_yield <- apply(Yield, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
+Yield_nonstandardized <- Data_xtrm_non_standardized$yield
+fifth_perc <- apply(Yield_nonstandardized, MARGIN = 1, FUN=quantile, probs=threshold, na.rm=T)
 cy <- t(sapply(1:pix_num,function(x){ifelse(Yield[x,]<low_yield[x],0,1)})) # assign crop yield to the two class bad and normal yield years
 cy_reshaped <- array(data=cy,dim=c(dim(cy)[1],1,nb_years))
 Model_data[,1,] <- cy_reshaped # Replace continuous crop yield with binary categories (bad and normal yield)
