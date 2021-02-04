@@ -1,5 +1,6 @@
 # Identify_crop_yield_drivers
-This repository provides the code of the article "Identifying meteorological drivers of extreme impacts: an application to simulated crop yields"
+This repository provides the code of the article "Identifying meteorological drivers of extreme impacts: an application to simulated crop yields".
+The code was created with contributions from Johannes Vogel, Pauline Rivoire, Cristina Deidda, Christoph A. Sauter and Elisabeth Tschumi.
 
 This readme gives an overview of the structure of the code related to the submitted manuscript of “Identifying meteorological drivers of extreme impacts: an application to simulated crop yields”.
 The codes were developed using R version 3.6 and Python version 3.7.
