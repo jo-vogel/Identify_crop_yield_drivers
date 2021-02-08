@@ -2,7 +2,7 @@
 
 """
 This script reads daily data from three gridpoints and their annual crop
-yield and produces Figures 2, A1, A2 in the paper.
+yield and produces Figures 2, B2, B3 in the paper.
 
 INPUT:
 - meteo_daily_FR_ensemblemode.nc
@@ -11,7 +11,7 @@ INPUT:
 - crop_yield_NH.nc
 
 OUTPUT:
-Figures 2, A1, A2 in the paper.
+Figures 2, B2, B3 in the paper.
 
 author: Christoph A Sauter
 email: christoph.sauter@strath.ac.uk
@@ -220,7 +220,7 @@ var_names_plot = {'dps': 'T$_d$  [$^\circ$C]',
                   'sfcwind': 'Wind  [m/s]',
                   'tasmax': r'T$_{max}$  [$^\circ$C]',
                   'tasmin': r'T$_{min}$  [$^\circ$C]',
-                  'vpd': 'VDP  [hPa]'}
+                  'vpd': 'VPD  [hPa]'}
 alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
 
