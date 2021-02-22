@@ -154,7 +154,7 @@ crop = read_nc_data(data_dir, file_name='crop_yield_NH.nc',
 
 gp = ['FR', 'CH2', 'US3']
 # France 47.7 ​N, 1.1 ​E
-# China 33.1 ​N, 118.1 E
+# China 30.8 ​N, 118.1 E
 # USA  44.3 ​N, 90.0 W
 
 data_gp = {}
